@@ -1,49 +1,58 @@
 import speech_recognition as sr
 import serial
+import serial.tools.list_ports
 import time
 
 # --- CONFIGURATION ---
-# Replace 'COM3' with the port you found in the Arduino IDE
-ARDUINO_PORT = 'COM3' 
 BAUD_RATE = 9600
 
-try:
-    arduino = serial.Serial(ARDUINO_PORT, BAUD_RATE, timeout=1)
-    time.sleep(2) # Give Arduino time to reset
-    print(f"Connected to Arduino on {ARDUINO_PORT}")
-except:
-    print("Could not connect to Arduino. Check the Port.")
+def find_arduino():
+    # We'll check your specific port first
+    ports = [p.device for p in serial.tools.list_ports.comports()]
+    if '/dev/ttyUSB0' in ports:
+        return '/dev/ttyUSB0'
+    # Fallback: find any USB port if the above isn't found
+    for port in ports:
+        if 'USB' in port or 'ACM' in port:
+            return port
+    return None
+
+arduino_port = find_arduino()
+
+if arduino_port:
+    try:
+        arduino = serial.Serial(arduino_port, BAUD_RATE, timeout=1)
+        time.sleep(2) # Stabilization delay
+        print(f"--- Connected to Arduino on {arduino_port} ---")
+    except Exception as e:
+        print(f"Error opening serial port: {e}")
+        exit()
+else:
+    print("Arduino not found. Please check the USB connection.")
     exit()
 
 def listen_for_commands():
     recognizer = sr.Recognizer()
-    # Adjust for ambient noise
     with sr.Microphone() as source:
-        print("Adjusting for background noise... please wait.")
+        print("Calibrating for background noise...")
         recognizer.adjust_for_ambient_noise(source, duration=1)
-        print("Ready! Say On,  Off, or Dim...")
+        print("Ready! Commands: 'ON', 'OFF', 'DIM'")
 
         while True:
             try:
                 audio = recognizer.listen(source, phrase_time_limit=3)
                 text = recognizer.recognize_google(audio).lower()
-                print(f"Heard: {text}")
+                print(f"Speech Detected: {text}")
 
                 if "on" in text:
                     arduino.write(b'V_ON\n')
-                    print("Sent: ON")
                 elif "off" in text:
                     arduino.write(b'V_OFF\n')
-                    print("Sent: OFF")
                 elif "dim" in text:
                     arduino.write(b'V_DIM\n')
-                    print("Sent: DIM")
                 
             except sr.UnknownValueError:
-                # Occurs when the AI hears sound but can't find words
                 continue 
-            except sr.RequestError:
-                print("Network error. Check your internet connection.")
             except Exception as e:
                 print(f"Error: {e}")
 
