@@ -46,7 +46,7 @@ def listen_for_commands():
 
                 if "on" in text:
                     arduino.write(b'V_ON\n')
-                elif "off" in text:
+                elif "off" in text or "of" in text:  # Handle common misrecognition
                     arduino.write(b'V_OFF\n')
                 elif "dim" in text:
                     arduino.write(b'V_DIM\n')
