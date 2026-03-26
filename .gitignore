@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env/
+
+# Arduino / build artifacts
+*.o
+*.d
+*.a
+*.so
+*.elf
+*.hex
+*.bin
+*.map
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
